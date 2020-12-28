@@ -92,51 +92,50 @@ function Slider(props: Props) {
       <PanGestureHandler
         ref={panRef}
         minDist={10}
+        // style={{width: widthLine}}
         simultaneousHandlers={[rotationRef, pinchRef]}
         onGestureEvent={handlePan}
         onHandlerStateChange={handlePan}>
-        <View>
-          <Animated.View style={{marginLeft: 5}}>
-            <Animated.View
-              resizeMode="contain"
-              style={[
-                styles.box,
-                {
-                  backgroundColor: tintColor,
-                  transform: [{translateX: translateX}],
-                },
-              ]}
-            />
-            <View
-              style={[
-                styles.line,
-                {
-                  borderColor: backgroundColor,
-                  width: widthLine,
-                },
-              ]}
-            />
-            <View
-              style={[
-                styles.lineSelect,
-                {width: translateX, borderColor: tintColor},
-              ]}
-            />
-          </Animated.View>
+        <Animated.View
+          resizeMode="contain"
+          style={[
+            styles.box,
+            {
+              backgroundColor: tintColor,
 
-          <View style={styles.valueStyle}>
-            <Text style={{color: tintColor}}>
-              {mode === 'currency'
-                ? currencyFormat(
-                    displayValue,
-                    currencySetting.lang,
-                    currencySetting.fixed,
-                  )
-                : displayValue}
-            </Text>
-          </View>
-        </View>
+              transform: [{translateX: translateX}],
+            },
+          ]}
+        />
       </PanGestureHandler>
+      <Animated.View style={{marginLeft: 5}}>
+        <View
+          style={[
+            styles.line,
+            {
+              borderColor: backgroundColor,
+              width: widthLine,
+            },
+          ]}
+        />
+        <View
+          style={[
+            styles.lineSelect,
+            {width: translateX, borderColor: tintColor},
+          ]}
+        />
+        <View style={styles.valueStyle}>
+          <Text style={{color: tintColor}}>
+            {mode === 'currency'
+              ? currencyFormat(
+                  displayValue,
+                  currencySetting.lang,
+                  currencySetting.fixed,
+                )
+              : displayValue}
+          </Text>
+        </View>
+      </Animated.View>
     </View>
   );
 }
@@ -151,7 +150,9 @@ const calculatorMiniumX = (minimumValue, maximumValue, widthLine, value) => {
 const styles = StyleSheet.create({
   container: {
     marginVertical: 40,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
   },
   box: {
     width: IMAGE_SIZE,
@@ -163,7 +164,6 @@ const styles = StyleSheet.create({
   },
   line: {
     borderWidth: 0.5,
-    top: 30 / 2,
     width: WIDTH_LINE,
     marginLeft: IMAGE_SIZE / 2,
     borderColor: 'dimgray',
@@ -173,7 +173,6 @@ const styles = StyleSheet.create({
     zIndex: 1,
     marginLeft: IMAGE_SIZE / 2,
     borderWidth: 0.5,
-    top: 30 / 2,
     position: 'absolute',
   },
   valueStyle: {position: 'absolute', bottom: 10, alignSelf: 'center'},

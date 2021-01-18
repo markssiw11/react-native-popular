@@ -1,102 +1,180 @@
-import React, {useState, useEffect} from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  Dimensions,
-  FlatList,
-} from 'react-native';
-const WIDTH_SCREEN = Dimensions.get('screen').width;
+import React, {useEffect, useState} from 'react';
+import {StyleSheet, View, Text, Dimensions, Animated} from 'react-native';
+import {PanGestureHandler, State} from 'react-native-gesture-handler';
+import csColor from '../../utils/csColor';
+import {currencyFormat} from '../../helper';
+const {width} = Dimensions.get('screen');
+const maxValueDefault = 100;
 type Props = {
-  widthLine: number,
-  range: number,
-  progressWidth: number,
-  unit: number,
   maximumValue?: number,
   minimumValue?: number,
-  step: number,
+  tintColor?: string,
+  backgroundColor?: string,
+  widthLine?: string,
+  unit?: number,
+  onChangeValue?: () => void,
+  value: number,
+  style?: React.CSSProperties,
+  mode?: 'currency' | 'normal' | null,
+  currencySetting?: typeof currencySettingDefault,
 };
-function ProgressBar(props: Props) {
+const currencySettingDefault = {
+  fixed: 0,
+  lang: 'vi',
+};
+function Slider(props: Props) {
   const {
-    widthLine = WIDTH_LINE,
-    range = 1,
-    progressWidth = 0,
-    unit = 1,
-    maximumValue = 100,
+    maximumValue = maxValueDefault,
     minimumValue = 0,
-    step,
+    tintColor,
+    backgroundColor,
+    widthLine = WIDTH_LINE,
+    unit = 1,
+    value = 0,
+    style,
+    onChangeValue,
+    mode = 'normal',
+    currencySetting = currencySettingDefault,
   } = props;
-
-  const [itemWidth, setItemWidth] = useState(
-    widthLine / ((maximumValue - minimumValue) / unit),
-  );
-  const [progress, setProgress] = useState(progressWidth);
-  const [element, setElement] = useState(Math.ceil(widthLine / itemWidth));
-  const [data, setData] = useState([]);
-  useEffect(() => {
-    setData([...Array(step).keys()]);
-    setItemWidth(widthLine / ((maximumValue - minimumValue) / unit));
-    setProgress(progressWidth);
-  }, [
-    element,
-    maximumValue,
+  const minimumX = calculatorMiniumX(
     minimumValue,
+    maximumValue,
     widthLine,
-    unit,
-    progress,
-    progressWidth,
-    itemWidth,
-    step,
-  ]);
+    value,
+  );
+  const distant = (value * widthLine) / (maximumValue - minimumValue);
 
-  const indexWidth = itemWidth - range;
-  const renderItem = ({item}) => {
-    const borderColor = item < progress ? 'green' : 'grey';
-    return (
-      <View key={item} style={styles.line}>
+  const [_X, set_X] = useState(minimumX + distant);
+  const [offsetX, setOffsetX] = useState(minimumX + distant);
+  useEffect(() => {
+    set_X(minimumX);
+    setOffsetX(minimumX);
+  }, [minimumX]);
+  const tempValue = Math.ceil((_X * (maximumValue - minimumValue)) / widthLine);
+  let displayValue = tempValue;
+  if (tempValue % unit !== 0) {
+    displayValue = tempValue - (tempValue % unit);
+  }
+
+  const handlePan = (event) => {
+    if (typeof onChangeValue === 'function') {
+      onChangeValue(displayValue);
+    }
+    const {nativeEvent} = event;
+    const {translationX, state} = nativeEvent;
+    const totalX = translationX + offsetX;
+
+    if (totalX <= minimumX) {
+      set_X(minimumX);
+      if (state === State.END) {
+        setOffsetX(minimumX);
+      }
+      return null;
+    }
+    const maxX = widthLine + minimumX;
+    if (totalX >= maxX) {
+      set_X(maxX);
+      if (state === State.END) {
+        setOffsetX(maxX);
+      }
+      return null;
+    }
+    set_X(totalX);
+    if (state === State.END) {
+      setOffsetX(totalX);
+    }
+  };
+  const rotationRef = React.createRef();
+  const panRef = React.createRef();
+  const pinchRef = React.createRef();
+  const translateX = _X - minimumX;
+  return (
+    <View style={[styles.container, {...style}]}>
+      <PanGestureHandler
+        ref={panRef}
+        minDist={10}
+        // style={{width: widthLine}}
+        simultaneousHandlers={[rotationRef, pinchRef]}
+        onGestureEvent={handlePan}
+        onHandlerStateChange={handlePan}>
         <Animated.View
+          resizeMode="contain"
           style={[
-            styles.index,
+            styles.box,
             {
-              borderColor,
-              width: indexWidth,
-              marginRight: range,
+              backgroundColor: tintColor,
+
+              transform: [{translateX: translateX}],
             },
           ]}
         />
-      </View>
-    );
-  };
-
-  return (
-    <View style={[styles.container, {width: widthLine}]}>
-      <RenderContent data={data} renderItem={renderItem} />
+      </PanGestureHandler>
+      <Animated.View style={{marginLeft: 5}}>
+        <View
+          style={[
+            styles.line,
+            {
+              borderColor: backgroundColor,
+              width: widthLine,
+            },
+          ]}
+        />
+        <View
+          style={[
+            styles.lineSelect,
+            {width: translateX, borderColor: tintColor},
+          ]}
+        />
+        <View style={styles.valueStyle}>
+          <Text style={{color: tintColor}}>
+            {mode === 'currency'
+              ? currencyFormat(
+                  displayValue,
+                  currencySetting.lang,
+                  currencySetting.fixed,
+                )
+              : displayValue}
+          </Text>
+        </View>
+      </Animated.View>
     </View>
   );
 }
-const RenderContent = ({data, renderItem}) => {
-  return (
-    <FlatList
-      data={data}
-      horizontal
-      keyExtractor={(item) => item}
-      renderItem={renderItem}
-    />
-  );
-};
+
+export default Slider;
+
 const IMAGE_SIZE = 30;
-const WIDTH_LINE = WIDTH_SCREEN - IMAGE_SIZE - 30;
+const WIDTH_LINE = width - IMAGE_SIZE - 30;
+const calculatorMiniumX = (minimumValue, maximumValue, widthLine, value) => {
+  return (minimumValue * widthLine) / (maximumValue - minimumValue);
+};
 const styles = StyleSheet.create({
   container: {
-    marginLeft: 65,
+    marginVertical: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
   },
-  line: {},
-  index: {
-    width: 20,
-    borderColor: 'green',
+  box: {
+    width: IMAGE_SIZE,
+    height: IMAGE_SIZE,
+    borderRadius: IMAGE_SIZE / 2,
+    position: 'absolute',
+    zIndex: 1,
+    backgroundColor: csColor.vars.green,
+  },
+  line: {
     borderWidth: 0.5,
-    marginRight: 2,
+    width: WIDTH_LINE,
+    marginLeft: IMAGE_SIZE / 2,
+    borderColor: csColor.vars.dimgray,
   },
+  lineSelect: {
+    borderColor: csColor.vars.green,
+    zIndex: 1,
+    marginLeft: IMAGE_SIZE / 2,
+    borderWidth: 0.5,
+    position: 'absolute',
+  },
+  valueStyle: {position: 'absolute', bottom: 15, alignSelf: 'center'},
 });
-export default ProgressBar;

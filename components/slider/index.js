@@ -92,7 +92,6 @@ function Slider(props: Props) {
       <PanGestureHandler
         ref={panRef}
         minDist={10}
-        // style={{width: widthLine}}
         simultaneousHandlers={[rotationRef, pinchRef]}
         onGestureEvent={handlePan}
         onHandlerStateChange={handlePan}>

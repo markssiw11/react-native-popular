@@ -3,4 +3,4 @@
  */
 
 
-export { Slider, DateTime, OptionsButton} from './components'
+export { Slider, OptionsButton} from './components'

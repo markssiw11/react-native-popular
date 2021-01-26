@@ -1,1 +1,1 @@
-# react-native-popular
+# react-native-bg-effect

@@ -3,4 +3,4 @@
  */
 
 
-export { Slider, OptionsButton} from './components'
+export { BgEffect} from './components'
